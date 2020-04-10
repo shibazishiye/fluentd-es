@@ -1,0 +1,52 @@
+version: '3.5'
+services:
+  fluentd:
+    #build: ./fluentd
+    image: ydx/fluentd-elasticsearch:latest
+    volumes:
+      - ./fluentd/conf:/fluentd/etc
+    container_name: fluentd
+    restart: always
+    links:
+      - "elasticsearch"
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    networks:
+      - esnet
+      
+  elasticsearch:
+    image: elasticsearch:7.6.2
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      # - ELASTIC_PASSWORD=passme
+    volumes:
+      - ./elasticsearch/data:/usr/share/elasticsearch/data
+    expose:
+      - "9200"
+    ports:
+      - "9200:9200"
+    networks:
+      - esnet
+      
+  kibana:
+    image: kibana:7.6.2
+    container_name: kibana
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - SERVER_NAME=kibana
+      - ELASTIC_HOST=localhost
+      - LOGSTASH_PREFIX=ydx
+      - ELASTIC_PASSWORD=passme
+      - ELASTIC_USER=elastic
+    links:
+      - elasticsearch
+    ports:
+      - 5601:5601
+    networks:
+      - esnet
+      
+networks: 
+  esnet:      
